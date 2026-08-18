@@ -1,3 +1,12 @@
 [phases.setup]
-    nixPkgs = ['nodejs', 'python3']
-    aptPkgs = ['build-essential', 'libudev-dev']
+nixPkgs = ['nodejs', 'python3']
+aptPkgs = ['build-essential', 'libudev-dev']
+
+[phases.install]
+cmds = ['npm install -g pnpm && pnpm install --frozen-lockfile']
+
+[phases.build]
+cmds = ['pnpm run prisma-generate && pnpm run build:backend']
+
+[start]
+cmd = 'node --experimental-require-module ./dist/apps/backend/src/main.js'

@@ -1,12 +1,7 @@
-[phases.setup]
-nixPkgs = ['nodejs', 'python3']
-aptPkgs = ['build-essential', 'libudev-dev']
+[build]
+builder = "nixpacks"
+buildCommand = "pnpm install --frozen-lockfile && pnpm run prisma-generate && pnpm run build:backend"
 
-[phases.install]
-cmds = ['npm install -g pnpm && pnpm install --frozen-lockfile']
-
-[phases.build]
-cmds = ['pnpm run prisma-generate && pnpm run build:backend']
-
-[start]
-cmd = 'node --experimental-require-module ./dist/apps/backend/src/main.js'
+[deploy]
+startCommand = "NODE_OPTIONS='--max-old-space-size=2048' node --experimental-require-module ./dist/apps/backend/src/main.js"
+restartPolicyType = "on_failure"

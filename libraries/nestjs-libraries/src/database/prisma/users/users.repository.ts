@@ -4,7 +4,7 @@ import {
 } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { createHash } from 'crypto';
-import { Provider, Role } from '@prisma/client';
+import { Product, Provider, Role } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { EmailNotificationsDto } from '@gitroom/nestjs-libraries/dtos/users/email-notifications.dto';
@@ -119,6 +119,7 @@ export class UsersRepository {
           mode: 'insensitive',
         },
         providerName: Provider.LOCAL,
+        product: (process.env.PRODUCT_TAG as Product) || Product.REVOZI,
         deletedAt: null,
       },
       include: {

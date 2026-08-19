@@ -83,6 +83,7 @@ model User {
   email                 String
   password              String?
   providerName          Provider
+  product               Product              @default(REVOZI)
   name                  String?
   lastName              String?
   isSuperAdmin          Boolean              @default(false)
@@ -117,7 +118,7 @@ model User {
   sendStreakEmails      Boolean              @default(true)
   oauthAuthorizations   OAuthAuthorization[]
 
-  @@unique([email, providerName])
+  @@unique([email, providerName, product])
   @@index([lastReadNotifications])
   @@index([inviteId])
   @@index([account])
@@ -921,6 +922,11 @@ enum SubscriptionTier {
 enum Period {
   MONTHLY
   YEARLY
+}
+
+enum Product {
+  REVOZI
+  AUTOMATION
 }
 
 enum Provider {

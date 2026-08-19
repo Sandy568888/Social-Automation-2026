@@ -1,5 +1,5 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
-import { Role, ShortLinkPreference, SubscriptionTier } from '@prisma/client';
+import { Product, Role, ShortLinkPreference, SubscriptionTier } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
@@ -299,6 +299,7 @@ export class OrganizationRepository {
                   ? AuthService.hashPassword(body.password)
                   : '',
                 providerName: body.provider,
+                product: (process.env.PRODUCT_TAG as Product) || Product.REVOZI,
                 providerId: body.providerId || '',
                 timezone: 0,
                 ip,

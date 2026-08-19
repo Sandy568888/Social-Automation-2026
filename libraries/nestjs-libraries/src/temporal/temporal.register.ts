@@ -29,7 +29,7 @@ export class TemporalRegister implements OnModuleInit {
           }, {}),
         });
       }
-    } catch (e) {
+    } catch (e: any) {
       console.warn('[TemporalRegister] Temporal not ready:', e.message);
     }
   }

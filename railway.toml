@@ -3,7 +3,7 @@
     aptPkgs = ['build-essential', 'libudev-dev']
 
 [build]
-    buildCommand = "npm install -g pnpm && pnpm install --frozen-lockfile && pnpm run build:backend && find /app -name 'main.js' -not -path '*/node_modules/*' 2>/dev/null || echo 'NO MAIN.JS FOUND'"
+    buildCommand = "npm install -g pnpm && pnpm install --frozen-lockfile && pnpm run prisma-generate && pnpm run build:backend"
 
 [deploy]
-    startCommand = "node /app/apps/backend/dist/main.js"
+    startCommand = "node --max-old-space-size=2048 --experimental-require-module ./apps/backend/dist/apps/backend/src/main.js"

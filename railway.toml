@@ -6,4 +6,4 @@
     buildCommand = "npm install -g pnpm && pnpm install --frozen-lockfile && pnpm run build:backend"
 
 [deploy]
-    startCommand = "node --experimental-require-module ./dist/apps/backend/src/main.js"
+    startCommand = "node --experimental-require-module ./dist/backend/apps/backend/src/main.js"

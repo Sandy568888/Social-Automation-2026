@@ -18,4 +18,4 @@ RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm run build:backend
 
 EXPOSE 3000
 
-CMD ["node", "--max-old-space-size=2048", "--experimental-require-module", "./apps/backend/dist/main.js"]
+CMD ["node", "--max-old-space-size=2048", "--experimental-require-module", "./apps/backend/dist/apps/backend/src/main.js"]

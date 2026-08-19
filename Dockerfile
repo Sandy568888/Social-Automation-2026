@@ -14,9 +14,8 @@ COPY . /app
 
 RUN pnpm install --frozen-lockfile
 RUN pnpm run prisma-generate
-RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm run build:backend || true
-RUN ls -la /app/dist/ 2>/dev/null || echo "NO DIST FOLDER" && \
-    ls -la /app/apps/backend/dist/ 2>/dev/null || echo "NO BACKEND DIST FOLDER"
+RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm run build:backend
 
 EXPOSE 3000
-CMD ["node", "--max-old-space-size=2048", "--experimental-require-module", "./dist/apps/backend/src/main.js"]
+
+CMD ["node", "--max-old-space-size=2048", "--experimental-require-module", "./apps/backend/dist/main.js"]

@@ -3,7 +3,7 @@
     aptPkgs = ['build-essential', 'libudev-dev']
 
 [build]
-    buildCommand = "npm install -g pnpm && pnpm install --frozen-lockfile && pnpm run build:backend"
+    buildCommand = "npm install -g pnpm && pnpm install --frozen-lockfile && pnpm run build:backend && find /app -name 'main.js' -not -path '*/node_modules/*' 2>/dev/null || echo 'NO MAIN.JS FOUND'"
 
 [deploy]
-    startCommand = "node --experimental-require-module /app/apps/backend/dist/main.js"
+    startCommand = "node /app/apps/backend/dist/main.js"

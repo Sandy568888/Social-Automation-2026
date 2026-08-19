@@ -2,5 +2,8 @@
     nixPkgs = ['nodejs', 'python3']
     aptPkgs = ['build-essential', 'libudev-dev']
 
+[build]
+    buildCommand = "npm install -g pnpm && pnpm install --frozen-lockfile && pnpm run build:backend"
+
 [deploy]
     startCommand = "node --experimental-require-module ./dist/apps/backend/src/main.js"

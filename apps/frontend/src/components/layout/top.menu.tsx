@@ -73,6 +73,16 @@ export const useMenuItem = () => {
       path: '/agents',
     },
     {
+    {
+      name: 'Automation',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="21" viewBox="0 0 20 21" fill="none">
+          <path d="M10 2L2 7V13L10 18L18 13V7L10 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M10 18V12M10 12L6 9M10 12L14 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+      path: '/automation',
+    },
       name: t('analytics', 'Analytics'),
       icon: (
         <svg

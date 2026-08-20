@@ -83,6 +83,7 @@ export const useMenuItem = () => {
       ),
       path: '/automation',
     },
+    {
       name: t('analytics', 'Analytics'),
       icon: (
         <svg

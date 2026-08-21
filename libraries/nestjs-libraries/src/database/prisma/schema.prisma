@@ -979,3 +979,17 @@ model Announcement {
   color       AnnouncementColor @default(INFO)
   createdAt   DateTime          @default(now())
 }
+
+model ScheduledPost {
+  id           String   @id @default(cuid())
+  userId       String
+  title        String
+  content      String   @db.Text
+  tags         String?
+  platforms    String[]
+  scheduledFor DateTime
+  status       String   @default("pending")
+  source       String   @default("manual")
+  aiTopic      String?
+  createdAt    DateTime @default(now())
+}

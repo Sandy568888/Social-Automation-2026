@@ -1,8 +1,9 @@
-import { Controller, Get, Query, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Headers, Query, Res } from '@nestjs/common';
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const BLOGGER_SCOPE = 'https://www.googleapis.com/auth/blogger';
+const BLOGGER_API_URL = 'https://www.googleapis.com/blogger/v3/blogs';
 
 const REDIRECT_URI =
   process.env.BLOGGER_REDIRECT_URI ||
@@ -45,7 +46,7 @@ export class BloggerOauthController {
 
       if (!tokenRes.ok) {
         console.error('Blogger token exchange failed:', tokenData);
-        return res.status(500).send('Token exchange failed — check server logs');
+        return res.status(500).send('Token exchange failed');
       }
 
       if (!tokenData.refresh_token) {
@@ -64,5 +65,62 @@ export class BloggerOauthController {
       console.error('Blogger OAuth callback error:', err);
       res.status(500).send('Unexpected error during OAuth callback');
     }
+  }
+
+  @Post('publish')
+  async publishPost(
+    @Headers('x-internal-secret') secret: string,
+    @Body() body: { title: string; content: string }
+  ) {
+    if (secret !== process.env.INTERNAL_SECRET) {
+      return { error: 'Unauthorized' };
+    }
+
+    try {
+      const accessToken = await this.getAccessToken();
+      const blogId = process.env.BLOGGER_BLOG_ID!;
+
+      const res = await fetch(`${BLOGGER_API_URL}/${blogId}/posts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          kind: 'blogger#post',
+          title: body.title,
+          content: body.content,
+        }),
+      });
+
+      const data: any = await res.json();
+      if (!res.ok) {
+        console.error('Blogger publish failed:', data);
+        return { error: data };
+      }
+
+      console.log('Blogger post published:', data.url);
+      return { success: true, url: data.url };
+    } catch (err) {
+      console.error('Blogger publish error:', err);
+      return { error: 'Publish failed' };
+    }
+  }
+
+  async getAccessToken(): Promise<string> {
+    const res = await fetch(GOOGLE_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: process.env.GOOGLE_CLIENT_ID!,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+        refresh_token: process.env.BLOGGER_REFRESH_TOKEN!,
+        grant_type: 'refresh_token',
+      }),
+    });
+
+    const data: any = await res.json();
+    if (!data.access_token) throw new Error('Failed to get access token');
+    return data.access_token;
   }
 }

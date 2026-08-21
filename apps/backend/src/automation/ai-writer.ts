@@ -8,38 +8,29 @@ export class AiWriterService {
   @Cron(CronExpression.EVERY_DAY_AT_9AM)
   async runDailyPost() {
     try {
-      const caption = await this.generatePost();
+      const { title, content } = await this.generatePost();
+      this.logger.log(`Generated post: ${title}`);
 
       const res = await fetch(
-        `${process.env.BACKEND_INTERNAL_URL || 'http://localhost:3000'}/internal/schedule-post`,
+        `${process.env.BACKEND_INTERNAL_URL || 'http://localhost:3000'}/platforms/blogger/publish`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'x-internal-secret': process.env.INTERNAL_SECRET!,
-            'x-revozi-workspace-id': process.env.AI_WRITER_WORKSPACE_ID!,
           },
-          body: JSON.stringify({
-            platform: process.env.AI_WRITER_PLATFORM || 'blogger',
-            caption,
-          }),
+          body: JSON.stringify({ title, content }),
         }
       );
 
-      if (!res.ok) {
-        const text = await res.text();
-        this.logger.error(`schedule-post failed: ${res.status} ${text}`);
-        return;
-      }
-
       const data = await res.json();
-      this.logger.log(`Daily post scheduled: ${JSON.stringify(data)}`);
+      this.logger.log(`Daily Blogger post result: ${JSON.stringify(data)}`);
     } catch (err) {
       this.logger.error('runDailyPost failed', err as Error);
     }
   }
 
-  private async generatePost(): Promise<string> {
+  async generatePost(): Promise<{ title: string; content: string }> {
     const topics = [
       'how social media automation saves time for busy entrepreneurs',
       'why consistent posting on social media grows your brand faster',
@@ -64,26 +55,29 @@ export class AiWriterService {
         messages: [
           {
             role: 'system',
-            content: `You are a content writer for Revozi, a powerful social media automation platform that helps businesses schedule, automate, and grow their social media presence using AI. Write engaging, informative blog posts that naturally highlight how Revozi solves social media challenges. Keep a professional but friendly tone. Always end with a call to action to try Revozi.`,
+            content: `You are a content writer for Revozi, a powerful social media automation platform that helps businesses schedule, automate, and grow their social media presence using AI. Write engaging blog posts that naturally highlight how Revozi solves social media challenges. Keep a professional but friendly tone. Always end with a call to action to try Revozi. Return ONLY valid JSON with "title" and "content" fields. Content should be HTML with h2, h3, p tags.`,
           },
           {
             role: 'user',
-            content: `Write a detailed blog post about: "${topic}". Include a catchy title, an introduction, 3-4 main points with subheadings, and a conclusion with a call to action mentioning Revozi. Format it as clean HTML with h2, h3, p tags. Make it at least 400 words.`,
+            content: `Write a detailed blog post about: "${topic}". Return JSON only: {"title": "...", "content": "...html..."}. Make it at least 400 words.`,
           },
         ],
-        max_tokens: 1000,
+        max_tokens: 1500,
         temperature: 0.8,
       }),
     });
 
     const data = await response.json() as any;
-    const content = data?.choices?.[0]?.message?.content;
+    const raw = data?.choices?.[0]?.message?.content || '';
 
-    if (!content) {
-      this.logger.error('OpenAI returned no content', data);
-      return 'Revozi helps you automate your social media and grow your brand effortlessly. Try it today!';
+    try {
+      const clean = raw.replace(/```json|```/g, '').trim();
+      return JSON.parse(clean);
+    } catch {
+      return {
+        title: 'How Revozi Transforms Your Social Media Strategy',
+        content: raw || '<p>Revozi helps you automate your social media and grow your brand effortlessly. Try it today!</p>',
+      };
     }
-
-    return content;
   }
 }

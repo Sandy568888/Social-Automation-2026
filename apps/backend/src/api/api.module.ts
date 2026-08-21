@@ -45,8 +45,6 @@ import { AppleProvider } from '@gitroom/backend/services/auth/providers/apple.pr
 import { FarcasterProvider } from '@gitroom/backend/services/auth/providers/farcaster.provider';
 import { WalletProvider } from '@gitroom/backend/services/auth/providers/wallet.provider';
 import { OauthProvider } from '@gitroom/backend/services/auth/providers/oauth.provider';
-import { BloggerOauthController } from '@gitroom/backend/automation/blogger-oauth.controller';
-import { LinkedinOauthController } from '@gitroom/backend/automation/linkedin-oauth.controller';
 
 const authenticatedController = [
   UsersController,
@@ -81,8 +79,6 @@ const authenticatedController = [
     NoAuthIntegrationsController,
     InternalScheduleController,
     OAuthController,
-    BloggerOauthController,
-    LinkedinOauthController,
     ...authenticatedController,
   ],
   providers: [

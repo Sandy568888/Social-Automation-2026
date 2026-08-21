@@ -6,7 +6,7 @@ const BLOGGER_SCOPE = 'https://www.googleapis.com/auth/blogger';
 
 const REDIRECT_URI =
   process.env.BLOGGER_REDIRECT_URI ||
-  'https://api.revozi.com/api/v1/platforms/blogger/callback';
+  'https://revozi-automation-app-production.up.railway.app/api/v1/platforms/blogger/callback';
 
 @Controller('platforms/blogger')
 export class BloggerOauthController {

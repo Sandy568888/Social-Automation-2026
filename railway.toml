@@ -7,3 +7,6 @@
 
 [deploy]
     startCommand = "node --max-old-space-size=2048 --experimental-require-module ./apps/backend/dist/apps/backend/src/main.js"
+    healthcheckTimeout = 300
+    restartPolicyType = "ON_FAILURE"
+    restartPolicyMaxRetries = 3

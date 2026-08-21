@@ -1,6 +1,4 @@
-# Revozi
-
-Revozi is an AI-powered social media scheduling and automation platform. Plan, schedule, and publish posts across multiple channels, generate content with AI, and track performance — all from one dashboard.
+social automation is an AI-powered social media scheduling and automation platform. Plan, schedule, and publish posts across multiple channels, generate content with AI, and track performance — all from one dashboard.
 
 ## Features
 

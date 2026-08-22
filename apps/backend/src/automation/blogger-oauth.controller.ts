@@ -107,6 +107,46 @@ export class BloggerOauthController {
     }
   }
 
+  @Post('publish-email')
+  async publishViaEmail(
+    @Headers('x-internal-secret') secret: string,
+    @Body() body: { title: string; content: string }
+  ) {
+    if (secret !== process.env.INTERNAL_SECRET) {
+      return { error: 'Unauthorized' };
+    }
+
+    try {
+      const nodemailer = require('nodemailer');
+
+      const gmailUser = process.env.GMAIL_USER;
+      const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
+      const bloggerPostEmail = process.env.BLOGGER_POST_EMAIL;
+
+      if (!gmailUser || !gmailAppPassword || !bloggerPostEmail) {
+        return { error: 'Missing GMAIL_USER, GMAIL_APP_PASSWORD, or BLOGGER_POST_EMAIL config' };
+      }
+
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user: gmailUser, pass: gmailAppPassword },
+      });
+
+      const info = await transporter.sendMail({
+        from: gmailUser,
+        to: bloggerPostEmail,
+        subject: body.title,
+        html: body.content,
+      });
+
+      console.log('Blogger email-publish sent:', info.messageId);
+      return { success: true, messageId: info.messageId, accepted: info.accepted };
+    } catch (err) {
+      console.error('Blogger email-publish error:', err);
+      return { error: 'Email publish failed', details: String(err) };
+    }
+  }
+
   async getAccessToken(): Promise<string> {
     const res = await fetch(GOOGLE_TOKEN_URL, {
       method: 'POST',

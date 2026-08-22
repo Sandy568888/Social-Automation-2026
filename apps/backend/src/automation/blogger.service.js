@@ -114,4 +114,36 @@ class BloggerService {
   }
 }
 
+
+  async publishViaEmail({ title, content }) {
+    const nodemailer = require("nodemailer");
+
+    const gmailUser = process.env.GMAIL_USER;
+    const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
+    const bloggerPostEmail = process.env.BLOGGER_POST_EMAIL;
+
+    if (!gmailUser || !gmailAppPassword || !bloggerPostEmail) {
+      throw new Error(
+        "publishViaEmail is missing required config: GMAIL_USER, GMAIL_APP_PASSWORD, or BLOGGER_POST_EMAIL"
+      );
+    }
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: gmailUser,
+        pass: gmailAppPassword,
+      },
+    });
+
+    const info = await transporter.sendMail({
+      from: gmailUser,
+      to: bloggerPostEmail,
+      subject: title,
+      html: content,
+    });
+
+    return { messageId: info.messageId, accepted: info.accepted };
+  }
+
 module.exports = { BloggerService };

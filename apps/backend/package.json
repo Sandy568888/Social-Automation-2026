@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@nestjs/schedule": "^6.1.3"
+    "@nestjs/schedule": "^6.1.3",
+    "nodemailer": "^9.0.5"
   }
 }

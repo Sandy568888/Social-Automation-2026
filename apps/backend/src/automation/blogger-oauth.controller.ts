@@ -117,30 +117,36 @@ export class BloggerOauthController {
     }
 
     try {
-      const nodemailer = require('nodemailer');
-
-      const gmailUser = process.env.GMAIL_USER;
-      const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
+      const apiKey = process.env.SENDGRID_API_KEY;
+      const fromEmail = process.env.SENDGRID_FROM_EMAIL;
       const bloggerPostEmail = process.env.BLOGGER_POST_EMAIL;
 
-      if (!gmailUser || !gmailAppPassword || !bloggerPostEmail) {
-        return { error: 'Missing GMAIL_USER, GMAIL_APP_PASSWORD, or BLOGGER_POST_EMAIL config' };
+      if (!apiKey || !fromEmail || !bloggerPostEmail) {
+        return { error: 'Missing SENDGRID_API_KEY, SENDGRID_FROM_EMAIL, or BLOGGER_POST_EMAIL config' };
       }
 
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: { user: gmailUser, pass: gmailAppPassword },
+      const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          personalizations: [{ to: [{ email: bloggerPostEmail }] }],
+          from: { email: fromEmail },
+          subject: body.title,
+          content: [{ type: 'text/html', value: body.content }],
+        }),
       });
 
-      const info = await transporter.sendMail({
-        from: gmailUser,
-        to: bloggerPostEmail,
-        subject: body.title,
-        html: body.content,
-      });
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error('SendGrid error:', res.status, errText);
+        return { error: 'Email publish failed', status: res.status, details: errText };
+      }
 
-      console.log('Blogger email-publish sent:', info.messageId);
-      return { success: true, messageId: info.messageId, accepted: info.accepted };
+      console.log('Blogger email-publish sent via SendGrid, status:', res.status);
+      return { success: true, status: res.status };
     } catch (err) {
       console.error('Blogger email-publish error:', err);
       return { error: 'Email publish failed', details: String(err) };

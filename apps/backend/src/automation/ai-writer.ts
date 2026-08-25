@@ -12,7 +12,7 @@ export class AiWriterService {
       this.logger.log(`Generated post: ${title}`);
 
       const res = await fetch(
-        `${process.env.BACKEND_INTERNAL_URL || 'http://localhost:3000'}/platforms/blogger/publish`,
+        `${process.env.BACKEND_INTERNAL_URL || 'http://localhost:3000'}/platforms/blogger/publish-email`,
         {
           method: 'POST',
           headers: {

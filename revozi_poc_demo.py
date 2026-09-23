@@ -1,3 +1,7 @@
+# ⚠️  DEMO SIMULATION ONLY — does not call any real provider APIs.
+# URLs and results below are fabricated for illustration purposes.
+# See the actual integration code in apps/frontend/src/components/automation/
+
 import json, datetime, time
 
 platforms = ["Hashnode", "Dev.to", "Medium"]

@@ -5,6 +5,12 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 export class AiWriterService {
   private readonly logger = new Logger(AiWriterService.name);
 
+    private _isCronLeader(): boolean {
+    // Only run cron on the primary replica (RAILWAY_REPLICA_ID === '0' or unset = single instance)
+    const replicaId = process.env.RAILWAY_REPLICA_ID ?? '0';
+    return replicaId === '0';
+  }
+
   @Cron(CronExpression.EVERY_DAY_AT_9AM)
   async runDailyPost() {
     try {

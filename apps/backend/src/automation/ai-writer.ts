@@ -12,7 +12,7 @@ export class AiWriterService {
       this.logger.log(`Generated post: ${title}`);
 
       const res = await fetch(
-        `${process.env.BACKEND_INTERNAL_URL || 'http://localhost:3000'}/platforms/blogger/publish-email`,
+        `${process.env.BACKEND_INTERNAL_URL || `http://localhost:${process.env.PORT || 3000}`}/platforms/blogger/publish-email`,
         {
           method: 'POST',
           headers: {
@@ -23,6 +23,10 @@ export class AiWriterService {
         }
       );
 
+      if (!res.ok) {
+        console.error('AI generation failed with status', res.status, '- aborting publish');
+        return;
+      }
       const data = await res.json();
       this.logger.log(`Daily Blogger post result: ${JSON.stringify(data)}`);
     } catch (err) {
@@ -67,17 +71,14 @@ export class AiWriterService {
       }),
     });
 
+    if (!response.ok) {
+      throw new Error(`AI API error: ${response.status}`);
+    }
     const data = await response.json() as any;
     const raw = data?.choices?.[0]?.message?.content || '';
+    if (!raw) throw new Error('AI returned empty content');
 
-    try {
-      const clean = raw.replace(/```json|```/g, '').trim();
-      return JSON.parse(clean);
-    } catch {
-      return {
-        title: 'How Revozi Transforms Your Social Media Strategy',
-        content: raw || '<p>Revozi helps you automate your social media and grow your brand effortlessly. Try it today!</p>',
-      };
-    }
+    const clean = raw.replace(/```json|```/g, '').trim();
+    return JSON.parse(clean);
   }
 }

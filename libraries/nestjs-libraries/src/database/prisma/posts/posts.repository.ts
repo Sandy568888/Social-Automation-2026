@@ -104,6 +104,7 @@ export class PostsRepository {
     return this._post.model.post.update({
       where: {
         id,
+        organizationId,
       },
       data: {
         image: images,
@@ -571,6 +572,7 @@ export class PostsRepository {
         await this._post.model.post.upsert({
           where: {
             id: value.id || uuidv4(),
+            organizationId: orgId,
           },
           create: { ...updateData('create') },
           update: {
@@ -631,6 +633,7 @@ export class PostsRepository {
               group: body.group,
               deletedAt: null,
               parentPostId: null,
+              organizationId: orgId,
             },
             select: {
               id: true,
@@ -644,6 +647,7 @@ export class PostsRepository {
         where: {
           group: body.group,
           deletedAt: null,
+          organizationId: orgId,
         },
         data: {
           parentPostId: null,
@@ -659,6 +663,7 @@ export class PostsRepository {
         where: {
           group: body.group,
           deletedAt: null,
+          organizationId: orgId,
           id: {
             notIn: posts.map((p) => p.id),
           },

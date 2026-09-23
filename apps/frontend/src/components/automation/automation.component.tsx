@@ -155,14 +155,14 @@ async function publishToBeehiiv(apiKey: string, title: string, content: string):
   const res = await fetch(`https://api.beehiiv.com/v2/publications/${pubId}/posts`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ subject: title, content, status: 'draft', content_tags: [] }),
+    body: JSON.stringify({ title, body_content: content, status: 'draft' }),
   });
   if (!res.ok) throw new Error(`Beehiiv error ${res.status}`);
   const data = await res.json();
   return { url: data?.data?.web_url || `https://beehiiv.com` };
 }
 
-async function publishPlatform(id: string, apiKey: string, title: string, content: string): Promise<{ url: string }> {
+async function publishPlatform(id: string, apiKey: string, title: string, content: string, tags: string[] = []): Promise<{ url: string }> {
   switch (id) {
     case 'devto':     return publishToDevto(apiKey, title, content);
     case 'hashnode':  return publishToHashnode(apiKey, title, content);
@@ -217,7 +217,8 @@ export const AutomationComponent = () => {
       try {
         const key = apiKeys[id];
         if (!key) throw new Error('No API key — add it in the Keys tab');
-        const { url } = await publishPlatform(id, key, title, content);
+        const tagList = tags.split(',').map(t => t.trim()).filter(Boolean);
+        const { url } = await publishPlatform(id, key, title, content, tagList);
         setLogs(prev => prev.map(l =>
           l.platform === platform.name && l.status === 'pending'
             ? { platform: platform.name, status: 'success', url, time: new Date().toLocaleTimeString() }

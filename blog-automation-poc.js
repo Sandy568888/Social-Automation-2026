@@ -4,7 +4,7 @@
  */
 
 const DEVTO_API_KEY = process.env.DEVTO_API_KEY || 'PASTE_DEVTO_KEY_HERE';
-const HASHNODE_API_KEY = process.env.HASHNODE_API_KEY || 'REDACTED_ROTATED_KEY';
+const HASHNODE_API_KEY = process.env.HASHNODE_API_KEY || '';
 const HASHNODE_PUBLICATION_ID = process.env.HASHNODE_PUB_ID || '6a87049d4f9f04372f0208f2';
 
 const blogPost = {

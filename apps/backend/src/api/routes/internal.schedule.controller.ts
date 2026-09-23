@@ -60,19 +60,34 @@ export class InternalScheduleController {
       // Find first connected integration matching the platform
       const allIntegrations =
         await this._integrationService.getIntegrationsList(orgId);
-      integration = allIntegrations?.find(
+      const matches = (allIntegrations || []).filter(
         (i: any) =>
           i.providerIdentifier?.toLowerCase() ===
           body.platform?.toLowerCase() &&
           i.disabled === false &&
           i.deletedAt === null
       );
+      if (matches.length > 1) {
+        throw new HttpException(
+          `Ambiguous destination: ${matches.length} active integrations for '${body.platform}'. Pass integration_id.`,
+          409
+        );
+      }
+      integration = matches[0];
     }
 
     if (!integration) {
       throw new HttpException(
         `No active integration found for platform: ${body.platform}`,
         404
+      );
+    }
+
+    // M-08: reject disabled or soft-deleted integrations
+    if (integration.disabled || integration.deletedAt) {
+      throw new HttpException(
+        `Integration is disabled or deleted: ${integration.id}`,
+        422
       );
     }
 

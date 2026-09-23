@@ -169,6 +169,7 @@ export class UsersRepository {
         providerId,
         providerName: provider,
         deletedAt: null,
+        product: (process.env.PRODUCT_TAG as Product) || Product.REVOZI,
       },
     });
   }

@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 
 const ALGO = 'aes-256-gcm';
-const SECRET = crypto.createHash('sha256').update(process.env.ENCRYPTION_SECRET || 'change-me').digest();
+const SECRET = crypto.createHash('sha256').update(process.env.ENCRYPTION_SECRET || (() => { throw new Error('ENCRYPTION_SECRET env var is required'); })()).digest();
 
 export function encrypt(text: string): string {
   const iv = crypto.randomBytes(12);

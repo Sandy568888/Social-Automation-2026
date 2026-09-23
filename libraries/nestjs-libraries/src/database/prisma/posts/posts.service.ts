@@ -676,9 +676,9 @@ export class PostsService {
             ) {
               await workflow.terminate();
             }
-          } catch (err) {}
+          } catch (err) { this.logger?.error('startWorkflow error', err); }
         }
-      } catch (err) {}
+      } catch (err) { this.logger?.error('startWorkflow error', err); }
     }
 
     return { error: true };
@@ -716,9 +716,9 @@ export class PostsService {
           ) {
             await workflow.terminate();
           }
-        } catch (err) {}
+        } catch (err) { this.logger?.error('startWorkflow error', err); }
       }
-    } catch (err) {}
+    } catch (err) { this.logger?.error('startWorkflow error', err); }
 
     if (state === 'DRAFT') {
       return;
@@ -749,7 +749,7 @@ export class PostsService {
             },
           ]),
         });
-    } catch (err) {}
+    } catch (err) { this.logger?.error('startWorkflow error', err); }
   }
 
   /**
@@ -956,7 +956,7 @@ export class PostsService {
           posts[0].id,
           orgId,
           posts[0].state
-        ).catch((err) => {});
+        ).catch((err) => { this.logger?.error('Failed to start workflow for post', err); });
       }
 
       Sentry.metrics.count('post_created', 1);
@@ -1031,7 +1031,7 @@ export class PostsService {
       let image = [];
       try {
         image = JSON.parse(p.image || '[]');
-      } catch (err) {}
+      } catch (err) { this.logger?.error('startWorkflow error', err); }
       return {
         id: p.id,
         content: p.content,
@@ -1144,7 +1144,7 @@ export class PostsService {
         orgId,
         state
       );
-    } catch (err) {}
+    } catch (err) { this.logger?.error('startWorkflow error', err); }
 
     return { id, state };
   }
@@ -1182,7 +1182,7 @@ export class PostsService {
           orgId,
           getPostById.state === 'DRAFT' ? 'DRAFT' : 'QUEUE'
         );
-      } catch (err) {}
+      } catch (err) { this.logger?.error('startWorkflow error', err); }
     }
 
     return newDate;

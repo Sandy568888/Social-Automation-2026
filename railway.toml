@@ -6,7 +6,7 @@
     buildCommand = "npm install -g pnpm && pnpm install --frozen-lockfile && pnpm run prisma-generate && pnpm run build:backend"
 
 [deploy]
-    startCommand = "node --max-old-space-size=2048 --experimental-require-module ./apps/backend/dist/apps/backend/src/main.js"
+    startCommand = "pnpm run prisma-db-push && node --max-old-space-size=2048 --experimental-require-module ./apps/backend/dist/apps/backend/src/main.js"
     healthcheckTimeout = 300
     restartPolicyType = "ON_FAILURE"
     restartPolicyMaxRetries = 3

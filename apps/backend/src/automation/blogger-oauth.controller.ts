@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Headers, Query, Res } from '@nestjs/common';
+import * as crypto from 'crypto';
+import { Controller, HttpCode, HttpStatus, Get, Post, Body, Headers, Query, Res } from '@nestjs/common';
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -9,10 +10,15 @@ const REDIRECT_URI =
   process.env.BLOGGER_REDIRECT_URI ||
   'https://revozi-automation-app-production.up.railway.app/platforms/blogger/callback';
 
+const pendingStates = new Set<string>();
+
 @Controller('platforms/blogger')
 export class BloggerOauthController {
   @Get('auth')
   auth(@Res() res: any) {
+    const state = crypto.randomBytes(16).toString('hex');
+    pendingStates.add(state);
+    setTimeout(() => pendingStates.delete(state), 10 * 60 * 1000); // expire after 10 min
     const params = new URLSearchParams({
       client_id: process.env.GOOGLE_CLIENT_ID!,
       redirect_uri: REDIRECT_URI,
@@ -20,13 +26,16 @@ export class BloggerOauthController {
       scope: BLOGGER_SCOPE,
       access_type: 'offline',
       prompt: 'consent',
+      state,
     });
     res.redirect(`${GOOGLE_AUTH_URL}?${params.toString()}`);
   }
 
   @Get('callback')
-  async callback(@Query('code') code: string, @Query('error') error: string, @Res() res: any) {
-    if (error) return res.status(400).send(`OAuth error: ${error}`);
+  async callback(@Query('code') code: string, @Query('error') error: string, @Query('state') state: string, @Res() res: any) {
+    if (error) return res.status(400).type('text/plain').send('OAuth error: ' + String(error).replace(/[<>&"']/g, ''));
+    if (!state || !pendingStates.has(state)) return res.status(400).type('text/plain').send('Invalid or expired OAuth state');
+    pendingStates.delete(state);
     if (!code) return res.status(400).send('Missing authorization code');
 
     try {
@@ -56,9 +65,7 @@ export class BloggerOauthController {
         );
       }
 
-      console.log('=== BLOGGER REFRESH TOKEN (copy into Railway as BLOGGER_REFRESH_TOKEN) ===');
-      console.log(tokenData.refresh_token);
-      console.log('===========================================================================');
+      // Refresh token must be stored via secure credential management - never logged
 
       res.send('Blogger connected. Refresh token printed to server logs — copy it into Railway.');
     } catch (err) {
@@ -72,8 +79,8 @@ export class BloggerOauthController {
     @Headers('x-internal-secret') secret: string,
     @Body() body: { title: string; content: string }
   ) {
-    if (secret !== process.env.INTERNAL_SECRET) {
-      return { error: 'Unauthorized' };
+    if (!process.env.INTERNAL_SECRET || !secret || secret.trim().length === 0 || secret !== process.env.INTERNAL_SECRET) {
+      throw new (require('@nestjs/common').UnauthorizedException)('Unauthorized');
     }
 
     try {
@@ -112,8 +119,8 @@ export class BloggerOauthController {
     @Headers('x-internal-secret') secret: string,
     @Body() body: { title: string; content: string }
   ) {
-    if (secret !== process.env.INTERNAL_SECRET) {
-      return { error: 'Unauthorized' };
+    if (!process.env.INTERNAL_SECRET || !secret || secret.trim().length === 0 || secret !== process.env.INTERNAL_SECRET) {
+      throw new (require('@nestjs/common').UnauthorizedException)('Unauthorized');
     }
 
     try {
@@ -141,11 +148,11 @@ export class BloggerOauthController {
 
       if (!res.ok) {
         const errText = await res.text();
-        console.error('SendGrid error:', res.status, errText);
+        console.error('Resend error:', res.status, errText);
         return { error: 'Email publish failed', status: res.status, details: errText };
       }
 
-      console.log('Blogger email-publish sent via SendGrid, status:', res.status);
+      console.log('Blogger email-publish sent via Resend, status:', res.status);
       return { success: true, status: res.status };
     } catch (err) {
       console.error('Blogger email-publish error:', err);
@@ -153,6 +160,7 @@ export class BloggerOauthController {
     }
   }
 
+  // M-02 NOTE: Blogger credentials are deployment-wide env vars. Per-org support is a known architectural limitation.
   async getAccessToken(): Promise<string> {
     const res = await fetch(GOOGLE_TOKEN_URL, {
       method: 'POST',

@@ -13,6 +13,7 @@ export class AiWriterService {
 
   @Cron(CronExpression.EVERY_DAY_AT_9AM)
   async runDailyPost() {
+    if (!this._isCronLeader()) return; // M-04: skip non-primary replicas
     try {
       const { title, content } = await this.generatePost();
       this.logger.log(`Generated post: ${title}`);

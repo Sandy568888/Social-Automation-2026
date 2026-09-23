@@ -241,6 +241,11 @@ export const AutomationComponent = () => {
     { key: 'logs',    label: 'Logs' },
   ] as const;
 
+  // M-12: warn that this page bypasses backend persistence
+  React.useEffect(() => {
+    console.warn('[Automation] Posts published here bypass the Postiz scheduler and will not appear in calendar or history.');
+  }, []);
+
   return (
     <div className="flex flex-1 h-full">
       {/* Sidebar */}

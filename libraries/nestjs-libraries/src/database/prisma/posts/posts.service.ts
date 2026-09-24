@@ -751,7 +751,11 @@ export class PostsService {
             },
           ]),
         });
-    } catch (err) { this.logger?.error('startWorkflow error', err); }
+    } catch (err) {
+      this.logger.error('startWorkflow failed to enqueue post workflow', err);
+      await this._postRepository.changeState(postId, 'ERROR', err);
+      throw err;
+    }
   }
 
   /**
@@ -953,12 +957,17 @@ export class PostsService {
       }
 
       if (body.type !== 'update') {
-        this.startWorkflow(
-          post.settings.__type.split('-')[0].toLowerCase(),
-          posts[0].id,
-          orgId,
-          posts[0].state
-        ).catch((err) => { this.logger?.error('Failed to start workflow for post', err); });
+        try {
+          await this.startWorkflow(
+            post.settings.__type.split('-')[0].toLowerCase(),
+            posts[0].id,
+            orgId,
+            posts[0].state
+          );
+        } catch (err) {
+          this.logger.error('Enqueue failed for post ' + posts[0].id, err);
+          throw new BadRequestException('Post saved but failed to enqueue for publishing. Check logs and retry.');
+        }
       }
 
       Sentry.metrics.count('post_created', 1);

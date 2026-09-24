@@ -152,14 +152,34 @@ async function publishToBeehiiv(apiKey: string, title: string, content: string):
   const [pubId, key] = apiKey.split('|');
   if (!pubId || !key) throw new Error('Beehiiv key format: publicationId|apiKey');
 
-  const res = await fetch(`https://api.beehiiv.com/v2/publications/${pubId}/posts`, {
+  // Step 1: create as draft
+  const createRes = await fetch(`https://api.beehiiv.com/v2/publications/${pubId}/posts`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, body_content: content, status: 'draft' }),
+    body: JSON.stringify({ title, content, status: 'draft' }),
   });
-  if (!res.ok) throw new Error(`Beehiiv error ${res.status}`);
-  const data = await res.json();
-  return { url: data?.data?.web_url || `https://beehiiv.com` };
+  if (!createRes.ok) {
+    const err = await createRes.json().catch(() => ({}));
+    throw new Error(`Beehiiv create failed (${createRes.status}): ${JSON.stringify(err)}`);
+  }
+  const createData = await createRes.json();
+  const postId = createData?.data?.id;
+  if (!postId) throw new Error('Beehiiv post created but no post ID returned');
+
+  // Step 2: publish the draft
+  const publishRes = await fetch(`https://api.beehiiv.com/v2/publications/${pubId}/posts/${postId}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'confirmed' }),
+  });
+  if (!publishRes.ok) {
+    const err = await publishRes.json().catch(() => ({}));
+    throw new Error(`Beehiiv publish failed (${publishRes.status}): ${JSON.stringify(err)}`);
+  }
+  const publishData = await publishRes.json();
+  const webUrl = publishData?.data?.web_url || createData?.data?.web_url;
+  if (!webUrl) throw new Error('Beehiiv post published but no URL returned — check your Beehiiv dashboard');
+  return { url: webUrl };
 }
 
 async function publishPlatform(id: string, apiKey: string, title: string, content: string, tags: string[] = []): Promise<{ url: string }> {

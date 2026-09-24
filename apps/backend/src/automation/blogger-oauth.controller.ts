@@ -1,5 +1,6 @@
 import * as crypto from 'crypto';
-import { Controller, HttpCode, HttpStatus, Get, Post, Body, Headers, Query, Res } from '@nestjs/common';
+import { Controller, HttpCode, HttpStatus, Get, Post, Body, Headers, Query, Res, OnModuleInit } from '@nestjs/common';
+import { createClient } from 'redis';
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -10,15 +11,22 @@ const REDIRECT_URI =
   process.env.BLOGGER_REDIRECT_URI ||
   'https://revozi-automation-app-production.up.railway.app/platforms/blogger/callback';
 
-const pendingStates = new Set<string>();
+const OAUTH_STATE_TTL = 600; // 10 minutes in seconds
 
 @Controller('platforms/blogger')
-export class BloggerOauthController {
+export class BloggerOauthController implements OnModuleInit {
+  private redis: ReturnType<typeof createClient>;
+
+  async onModuleInit() {
+    this.redis = createClient({ url: process.env.REDIS_URL });
+    this.redis.on('error', (err) => console.error('[Blogger OAuth] Redis error', err));
+    await this.redis.connect();
+  }
+
   @Get('auth')
-  auth(@Res() res: any) {
+  async auth(@Res() res: any) {
     const state = crypto.randomBytes(16).toString('hex');
-    pendingStates.add(state);
-    setTimeout(() => pendingStates.delete(state), 10 * 60 * 1000); // expire after 10 min
+    await this.redis.set(`oauth:blogger:state:${state}`, '1', { EX: OAUTH_STATE_TTL });
     const params = new URLSearchParams({
       client_id: process.env.GOOGLE_CLIENT_ID!,
       redirect_uri: REDIRECT_URI,
@@ -34,8 +42,10 @@ export class BloggerOauthController {
   @Get('callback')
   async callback(@Query('code') code: string, @Query('error') error: string, @Query('state') state: string, @Res() res: any) {
     if (error) return res.status(400).type('text/plain').send('OAuth error: ' + String(error).replace(/[<>&"']/g, ''));
-    if (!state || !pendingStates.has(state)) return res.status(400).type('text/plain').send('Invalid or expired OAuth state');
-    pendingStates.delete(state);
+    const stateKey = `oauth:blogger:state:${state}`;
+    const stateExists = await this.redis.get(stateKey);
+    if (!state || !stateExists) return res.status(400).type('text/plain').send('Invalid or expired OAuth state');
+    await this.redis.del(stateKey);
     if (!code) return res.status(400).send('Missing authorization code');
 
     try {

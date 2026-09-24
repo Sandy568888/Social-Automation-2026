@@ -86,6 +86,18 @@ export class AiWriterService {
     if (!raw) throw new Error('AI returned empty content');
 
     const clean = raw.replace(/```json|```/g, '').trim();
-    return JSON.parse(clean);
+    let parsed: { title: string; content: string };
+    try {
+      parsed = JSON.parse(clean);
+    } catch {
+      throw new Error('AI returned invalid JSON');
+    }
+    if (!parsed.title || typeof parsed.title !== 'string' || parsed.title.trim().length === 0) {
+      throw new Error('AI returned empty or missing title');
+    }
+    if (!parsed.content || typeof parsed.content !== 'string' || parsed.content.trim().length < 100) {
+      throw new Error('AI returned empty or too-short content');
+    }
+    return { title: parsed.title.trim(), content: parsed.content.trim() };
   }
 }

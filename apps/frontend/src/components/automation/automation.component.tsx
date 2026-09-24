@@ -407,6 +407,9 @@ export const AutomationComponent = () => {
         {/* Logs Tab */}
         {activeTab === 'logs' && (
           <div className="flex flex-col gap-[16px]">
+            <div className="text-[12px] text-yellow-400 bg-yellow-400/10 border border-yellow-400/30 rounded-[8px] px-[14px] py-[10px]">
+              ⚠️ These are live publish results, not simulated. Posts published here are sent directly to platforms and will not appear in the Postiz scheduler, calendar, or history.
+            </div>
             <div className="flex items-center justify-between">
               <h3 className="text-[18px] font-[500]">Publish Logs</h3>
               {logs.length > 0 && (

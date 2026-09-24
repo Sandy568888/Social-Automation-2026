@@ -49,7 +49,7 @@ export class HashnodeSettingsDto {
 
   @IsString()
   @IsDefined()
-  publication?: string;
+  publication: string;
 
   @IsArray()
   @ArrayMinSize(1)

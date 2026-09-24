@@ -65,9 +65,11 @@ export class BloggerOauthController {
         );
       }
 
-      // Refresh token must be stored via secure credential management - never logged
-
-      res.send('Blogger connected. Refresh token printed to server logs — copy it into Railway.');
+      const fs = require('fs');
+      const tokenPath = '/tmp/blogger_refresh_token.txt';
+      fs.writeFileSync(tokenPath, tokenData.refresh_token, { mode: 0o600 });
+      console.log('[Blogger OAuth] Refresh token written to', tokenPath);
+      res.send('Blogger OAuth complete. Copy BLOGGER_REFRESH_TOKEN from ' + tokenPath + ' into Railway env vars, then delete the file.');
     } catch (err) {
       console.error('Blogger OAuth callback error:', err);
       res.status(500).send('Unexpected error during OAuth callback');

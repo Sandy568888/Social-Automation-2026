@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
 import clsx from 'clsx';
 
@@ -242,7 +242,7 @@ export const AutomationComponent = () => {
   ] as const;
 
   // M-12: warn that this page bypasses backend persistence
-  React.useEffect(() => {
+  useEffect(() => {
     console.warn('[Automation] Posts published here bypass the Postiz scheduler and will not appear in calendar or history.');
   }, []);
 

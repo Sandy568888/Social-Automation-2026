@@ -30,6 +30,7 @@ export class InternalScheduleController {
       integration_id?: string;
       date?: string;
       image_urls?: string[];
+      tags?: string[];
     }
   ) {
     // Validate internal secret
@@ -100,7 +101,7 @@ export class InternalScheduleController {
         date: postDate,
         type,
         shortLink: false,
-        tags: [],
+        tags: (body.tags || []).map((t: string) => ({ value: t, label: t })),
         posts: [
           {
             integration,

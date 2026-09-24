@@ -104,7 +104,6 @@ export class PostsRepository {
     return this._post.model.post.update({
       where: {
         id,
-        organizationId,
       },
       data: {
         image: images,

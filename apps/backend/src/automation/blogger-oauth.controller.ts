@@ -24,9 +24,10 @@ export class BloggerOauthController implements OnModuleInit {
   }
 
   @Get('auth')
-  async auth(@Res() res: any) {
+  async auth(@Query('orgId') orgId: string, @Res() res: any) {
+    if (!orgId) return res.status(400).send('Missing orgId');
     const state = crypto.randomBytes(16).toString('hex');
-    await this.redis.set(`oauth:blogger:state:${state}`, '1', { EX: OAUTH_STATE_TTL });
+    await this.redis.set(`oauth:blogger:state:${state}`, orgId, { EX: OAUTH_STATE_TTL });
     const params = new URLSearchParams({
       client_id: process.env.GOOGLE_CLIENT_ID!,
       redirect_uri: REDIRECT_URI,
@@ -75,11 +76,11 @@ export class BloggerOauthController implements OnModuleInit {
         );
       }
 
-      const fs = require('fs');
-      const tokenPath = '/tmp/blogger_refresh_token.txt';
-      fs.writeFileSync(tokenPath, tokenData.refresh_token, { mode: 0o600 });
-      console.log('[Blogger OAuth] Refresh token written to', tokenPath);
-      res.send('Blogger OAuth complete. Copy BLOGGER_REFRESH_TOKEN from ' + tokenPath + ' into Railway env vars, then delete the file.');
+      // M-02/M-03: store token in Redis keyed by org, no tmp files
+      const orgId = stateExists;
+      await this.redis.set(`blogger:refresh_token:${orgId}`, tokenData.refresh_token, { EX: 60 * 60 * 24 * 365 });
+      console.log('[Blogger OAuth] Refresh token stored in Redis for org', orgId);
+      res.send('Blogger OAuth complete for org ' + orgId + '. Token stored securely.');
     } catch (err) {
       console.error('Blogger OAuth callback error:', err);
       res.status(500).send('Unexpected error during OAuth callback');
@@ -172,15 +173,20 @@ export class BloggerOauthController implements OnModuleInit {
     }
   }
 
-  // M-02 NOTE: Blogger credentials are deployment-wide env vars. Per-org support is a known architectural limitation.
-  async getAccessToken(): Promise<string> {
+  async getAccessToken(orgId?: string): Promise<string> {
+    // M-02/M-03: prefer org-scoped token from Redis, fall back to env var for single-tenant deployments
+    let refreshToken = process.env.BLOGGER_REFRESH_TOKEN!;
+    if (orgId) {
+      const orgToken = await this.redis.get(`blogger:refresh_token:${orgId}`);
+      if (orgToken) refreshToken = orgToken;
+    }
     const res = await fetch(GOOGLE_TOKEN_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         client_id: process.env.GOOGLE_CLIENT_ID!,
         client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-        refresh_token: process.env.BLOGGER_REFRESH_TOKEN!,
+        refresh_token: refreshToken,
         grant_type: 'refresh_token',
       }),
     });

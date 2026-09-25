@@ -1,19 +1,38 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { createClient } from 'redis';
+
+const CRON_LOCK_KEY = 'cron:leader:daily-post';
+const CRON_LOCK_TTL = 60; // seconds
 
 @Injectable()
-export class AiWriterService {
+export class AiWriterService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AiWriterService.name);
+  private redis: ReturnType<typeof createClient>;
 
-    private _isCronLeader(): boolean {
-    // Only run cron on the primary replica (RAILWAY_REPLICA_ID === '0' or unset = single instance)
-    const replicaId = process.env.RAILWAY_REPLICA_ID ?? '0';
-    return replicaId === '0';
+  async onModuleInit() {
+    this.redis = createClient({ url: process.env.REDIS_URL });
+    this.redis.on('error', (err) => this.logger.error('Redis error', err));
+    await this.redis.connect();
+  }
+
+  async onModuleDestroy() {
+    await this.redis.quit();
+  }
+
+  private async _acquireCronLock(): Promise<boolean> {
+    // M-04: use Redis NX lock so only one replica runs the cron
+    const result = await this.redis.set(CRON_LOCK_KEY, '1', {
+      NX: true,
+      EX: CRON_LOCK_TTL,
+    });
+    return result === 'OK';
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_9AM)
   async runDailyPost() {
-    if (!this._isCronLeader()) return; // M-04: skip non-primary replicas
+    const acquired = await this._acquireCronLock();
+    if (!acquired) return; // another replica already has the lock
     try {
       const { title, content } = await this.generatePost();
       this.logger.log(`Generated post: ${title}`);
